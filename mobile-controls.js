@@ -244,7 +244,7 @@ const MobileControls = {
         document.dispatchEvent(keyEvent);
         
         // Enhanced visual feedback
-        button.style.opacity = '0.7';
+        button.style.opacity = '0.6';
         button.classList.add('active'); // Add active class for animation
         button.classList.add('pressed'); // Add pressed class for press effect
       });

@@ -46,8 +46,8 @@
 /* Simple D-pad buttons */
 .dpad-button {
   position: absolute;
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   background-color: rgba(0, 0, 0, 0.3); /* Very transparent */
   display: flex;
   justify-content: center;
@@ -360,8 +360,8 @@
   }
   
   .dpad-button {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
   }
   
   .dpad-button::before {
@@ -436,7 +436,7 @@
   }
   
   .char-info {
-    width: 28% !important;
+    width: 25% !important;
     padding: 8px !important;
   }
   
@@ -469,15 +469,15 @@
   
   /* Controls adjustments for PlayStation D-pad */
   .dpad-container {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     bottom: 10px;
     left: 10px;
   }
   
   .dpad-button {
-    width: 35px;
-    height: 35px;
+    width: 50px;
+    height: 50px;
     font-size: 14px;
   }
   
