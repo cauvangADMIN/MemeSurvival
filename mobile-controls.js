@@ -1,8 +1,9 @@
 /**
  * Mobile Controls for Meme Survival Game
  * - Detects mobile devices
- * - Forces landscape orientation
+ * - Forces landscape orientation and fullscreen
  * - Provides touch controls (D-pad and Space button)
+ * - Shows controls only after tutorial
  */
 
 const MobileControls = {
@@ -10,6 +11,8 @@ const MobileControls = {
   isMobile: false,
   isLandscape: false,
   keys: {},
+  controlsVisible: false,
+  tutorialClosed: false,
   
   // Initialize mobile controls
   init: function() {
@@ -19,15 +22,25 @@ const MobileControls = {
     // Create orientation message
     this.createOrientationMessage();
     
-    // Create mobile controls if on mobile
+    // Create mobile controls if on mobile, but keep them hidden
     if (this.isMobile) {
       this.createMobileControls();
       this.setupEventListeners();
       this.checkOrientation();
+      this.hideControls(); // Initially hide controls
       
       // Listen for orientation changes
       window.addEventListener('resize', () => this.checkOrientation());
       window.addEventListener('orientationchange', () => this.checkOrientation());
+      
+      // Try to request fullscreen when page loads
+      document.addEventListener('click', () => this.requestFullscreen(), { once: true });
+      
+      // Listen for tutorial close event
+      window.addEventListener('tutorialClosed', () => {
+        this.tutorialClosed = true;
+        this.showControls();
+      });
     }
   },
   
@@ -53,6 +66,26 @@ const MobileControls = {
     console.log("Mobile detection:", this.isMobile);
   },
   
+  // Request fullscreen mode
+  requestFullscreen: function() {
+    if (!this.isMobile) return;
+    
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) { /* Firefox */
+        elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) { /* IE/Edge */
+        elem.msRequestFullscreen();
+      }
+    } catch (e) {
+      console.log('Fullscreen request error:', e);
+    }
+  },
+  
   // Check and handle orientation
   checkOrientation: function() {
     if (!this.isMobile) return;
@@ -69,24 +102,22 @@ const MobileControls = {
     // Force landscape orientation if on mobile
     if (!this.isLandscape) {
       // Try to request fullscreen and landscape orientation if supported
+      this.requestFullscreen();
+      
+      // Try to lock orientation if supported
       try {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-          elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { /* Safari */
-          elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) { /* IE11 */
-          elem.msRequestFullscreen();
-        }
-        
-        // Try to lock orientation if supported
         if (screen.orientation && screen.orientation.lock) {
           screen.orientation.lock('landscape').catch(e => {
             console.log('Orientation lock failed:', e);
           });
         }
       } catch (e) {
-        console.log('Fullscreen or orientation lock error:', e);
+        console.log('Orientation lock error:', e);
+      }
+    } else {
+      // We're in landscape, make sure controls are visible if tutorial is closed
+      if (this.tutorialClosed) {
+        this.showControls();
       }
     }
   },
@@ -248,6 +279,26 @@ const MobileControls = {
         spaceButton.classList.remove('ready');
       }
     }
+  },
+  
+  // Show mobile controls
+  showControls: function() {
+    if (!this.isMobile || !this.tutorialClosed) return;
+    
+    const controls = document.querySelector('.mobile-controls');
+    if (controls) {
+      controls.style.display = 'block';
+      this.controlsVisible = true;
+    }
+  },
+  
+  // Hide mobile controls
+  hideControls: function() {
+    const controls = document.querySelector('.mobile-controls');
+    if (controls) {
+      controls.style.display = 'none';
+      this.controlsVisible = false;
+    }
   }
 };
 
@@ -256,8 +307,17 @@ document.addEventListener('DOMContentLoaded', () => {
   MobileControls.init();
   
   // Connect to the game's energy system to update space button state
-  // This will be called from the game.js
   window.updateMobileSpaceButton = function(isReady) {
     MobileControls.updateSpaceButton(isReady);
+  };
+  
+  // Function to show controls after tutorial
+  window.showMobileControls = function() {
+    // Dispatch event that tutorial is closed
+    const event = new Event('tutorialClosed');
+    window.dispatchEvent(event);
+    
+    // Try to request fullscreen again when user interacts
+    MobileControls.requestFullscreen();
   };
 });

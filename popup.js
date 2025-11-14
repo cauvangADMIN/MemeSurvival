@@ -64,6 +64,27 @@ function handleUnderstandBtnClick() {
     setTimeout(() => {
       showTutorialPopup(false);
       
+      // Show mobile controls if on mobile device
+      if (typeof window.showMobileControls === 'function') {
+        window.showMobileControls();
+      }
+      
+      // Try to request fullscreen mode
+      try {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+          elem.webkitRequestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+          elem.mozRequestFullScreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+          elem.msRequestFullscreen();
+        }
+      } catch (e) {
+        console.log('Fullscreen request error:', e);
+      }
+      
       // Call the game's countdown function if it exists
       if (typeof startCountdownThenStartGame === 'function') {
         startCountdownThenStartGame();

@@ -4,6 +4,8 @@
   position: fixed;
   z-index: 100;
   pointer-events: none; /* The container doesn't capture events */
+  width: 100%;
+  height: 100%;
 }
 
 /* D-pad styles */
@@ -14,32 +16,38 @@
   width: 150px;
   height: 150px;
   pointer-events: auto; /* Allow interaction */
+  z-index: 110;
 }
 
 .dpad {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
 .dpad-button {
   position: absolute;
   width: 50px;
   height: 50px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   font-weight: bold;
+  font-size: 18px;
   user-select: none;
   -webkit-user-select: none;
+  text-shadow: 0 0 3px #000;
 }
 
 .dpad-up {
@@ -74,23 +82,26 @@
   bottom: 30px;
   right: 30px;
   pointer-events: auto; /* Allow interaction */
+  z-index: 110;
 }
 
 .space-button {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, rgba(0, 242, 96, 0.7), rgba(5, 117, 230, 0.7));
+  background: linear-gradient(135deg, rgba(0, 242, 96, 0.8), rgba(5, 117, 230, 0.8));
+  border: 2px solid rgba(255, 255, 255, 0.5);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
   user-select: none;
   -webkit-user-select: none;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
 .space-button.ready {
@@ -144,15 +155,84 @@
 }
 
 /* Only show on portrait orientation on mobile */
+/* Responsive adjustments for different screen sizes */
 @media screen and (max-width: 900px) and (orientation: portrait) {
   .orientation-message {
     display: flex;
   }
 }
 
-/* Only show mobile controls on mobile devices in landscape */
+/* Only show mobile controls on mobile devices in landscape when explicitly enabled */
 @media screen and (max-width: 900px) and (orientation: landscape) {
-  .mobile-controls {
-    display: block;
+  /* Controls are shown via JavaScript after tutorial */
+  body.mobile-device {
+    /* Ensure the game fits properly in landscape mode */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
+  /* Adjust container sizes for character selection screen */
+  .container {
+    width: 98% !important;
+    height: 90% !important;
+  }
+  
+  .char-list {
+    width: 30% !important;
+    padding: 10px !important;
+  }
+  
+  .char-info {
+    width: 30% !important;
+    padding: 15px !important;
+  }
+  
+  /* Ensure buttons are visible */
+  .fight-btn, .mode-btn {
+    padding: 8px 15px !important;
+    margin: 5px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Adjust D-pad for smaller screens */
+  .dpad-container {
+    width: 120px;
+    height: 120px;
+    bottom: 15px;
+    left: 15px;
+  }
+  
+  .dpad-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* Adjust Space button for smaller screens */
+  .space-button {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* Extra small screens */
+@media screen and (max-width: 480px) and (orientation: landscape) {
+  .dpad-container {
+    width: 100px;
+    height: 100px;
+    bottom: 10px;
+    left: 10px;
+  }
+  
+  .dpad-button {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .space-button {
+    width: 60px;
+    height: 60px;
+    font-size: 14px;
   }
 }
