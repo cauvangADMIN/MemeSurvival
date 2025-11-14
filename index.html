@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run For Your Life</title>
+<!-- Gaming font -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="characters.js"></script>
+
+<style>
+  /* ---------------- MAIN MENU ---------------- */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    height: 100vh;
+    overflow: hidden;
+    font-family: "Orbitron", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  .main-menu {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(80,0,130,0.8) 0%, rgba(10,0,20,0.95) 100%),
+                url('c45cb1a20d3ff20085ac0bc64fb33dcd.jpg') center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    z-index: 1000;
+    transition: opacity 1s ease;
+  }
+
+  .main-menu.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .menu-title {
+    font-family: "Press Start 2P", "Orbitron", sans-serif;
+    font-size: 3em;
+    color: #f4eaff;
+    text-shadow: 0 0 20px #b68cff, 0 0 40px #8a4eff;
+    position: relative;
+    margin-bottom: 40px;
+  }
+
+  .menu-title::before, .menu-title::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 160px;
+    height: 10px;
+    border-top: 2px solid #b68cff;
+    border-bottom: 2px solid #b68cff;
+    opacity: 0.7;
+  }
+
+  .menu-title::before { left: -190px; }
+  .menu-title::after { right: -190px; }
+
+  .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .menu-btn {
+    font-size: 1.6em;
+    color: #e9d8ff;
+    cursor: pointer;
+    transition: transform 0.3s ease, text-shadow 0.3s ease;
+  }
+
+  .menu-btn:hover {
+    transform: scale(1.12);
+    text-shadow: 0 0 15px #b68cff, 0 0 25px #8a4eff;
+  }
+</style>
+
+<!-- ================= ORIGINAL CHARACTER SELECT STYLE (UNCHANGED) ================= -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body.character-active {
+    height: 100vh;
+    background: url('https://images.alphacoders.com/115/1152610.jpg') center/cover no-repeat;
+    font-family: "Orbitron", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .container {
+    display: flex;
+    width: 90%;
+    height: 85%;
+    background: rgba(0,0,0,0.4);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 30px rgba(255,255,255,0.1);
+  }
+
+  .char-list {
+    width: 25%;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  .char-thumb {
+    width: 80%;
+    aspect-ratio: 1/1.1;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .char-thumb.rarity-common {
+    background: linear-gradient(135deg, #a0a0a0, #808080);
+    background-image:
+      linear-gradient(135deg, #a0a0a0, #808080),
+      repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+  }
+
+  .char-thumb.rarity-rare {
+    background: linear-gradient(135deg, #d4af37, #b8860b);
+    background-image:
+      linear-gradient(135deg, #d4af37, #b8860b),
+      repeating-radial-gradient(circle at 25% 25%, transparent 0, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+    box-shadow: inset 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  .char-thumb.rarity-epic {
+    background: linear-gradient(135deg, #9370db, #663399);
+    background-image:
+      linear-gradient(135deg, #9370db, #663399),
+      radial-gradient(circle at top right, rgba(255,255,255,0.3), transparent 70%),
+      repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+    box-shadow: inset 0 0 25px rgba(147,112,219,0.5);
+    animation: pulse-epic 2s infinite alternate;
+  }
+
+  @keyframes pulse-epic {
+    0% { box-shadow: inset 0 0 25px rgba(147,112,219,0.5); }
+    100% { box-shadow: inset 0 0 35px rgba(147,112,219,0.8); }
+  }
+
+  .char-thumb:nth-child(even) { transform: translateY(10px); }
+
+  .char-thumb:hover { transform: scale(1.05); z-index: 10; }
+
+  .char-thumb.rarity-common:hover { box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+  .char-thumb.rarity-rare:hover { box-shadow: 0 0 20px rgba(255,215,0,0.6); }
+  .char-thumb.rarity-epic:hover {
+    box-shadow: 0 0 25px rgba(147,112,219,0.8);
+    animation: glow-epic 1s infinite alternate;
+  }
+
+  @keyframes glow-epic {
+    0% { box-shadow: 0 0 15px rgba(147,112,219,0.8); }
+    100% { box-shadow: 0 0 30px rgba(147,112,219,1); }
+  }
+
+  .char-thumb::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-size: cover;
+    z-index: 5;
+  }
+
+  .char-thumb.rarity-common::after { background: radial-gradient(circle, #c0c0c0, #808080); box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+  .char-thumb.rarity-rare::after { background: radial-gradient(circle, #ffd700, #b8860b); box-shadow: 0 0 5px rgba(255,215,0,0.7); }
+  .char-thumb.rarity-epic::after { background: radial-gradient(circle, #e0b0ff, #9370db); box-shadow: 0 0 8px rgba(147,112,219,0.8); animation: rotate-star 3s linear infinite; }
+
+  @keyframes rotate-star { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .char-thumb::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+    z-index: 2; pointer-events: none;
+  }
+
+  .char-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; position: relative; z-index: 1; }
+
+  .char-thumb.active {
+    border-color: #00ffff;
+    box-shadow: 0 0 10px #00ffff, inset 0 0 15px rgba(0,255,255,0.4);
+    animation: pulse 1.5s infinite;
+    z-index: 20;
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 10px #00ffff, inset 0 0 15px rgba(0,255,255,0.4); }
+    50% { box-shadow: 0 0 20px #00ffff, inset 0 0 20px rgba(0,255,255,0.6); }
+  }
+
+  .char-display { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+
+  .char-display img {
+    max-height: 100%;
+    max-width: 100%;
+    opacity: 0;
+    transform: scale(1.1);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    position: absolute;
+  }
+
+  .char-display img.active { opacity: 1; transform: scale(1); position: relative; }
+
+  .char-info { width: 25%; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+
+  .info-text { animation: fadeIn 1s ease forwards; }
+  .info-text h2 { font-size: 2em; margin-bottom: 10px; color: #00ffff; }
+  .info-text p { font-size: 1em; margin-bottom: 15px; line-height: 1.5; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fight-btn {
+    align-self: flex-end;
+    background: linear-gradient(90deg, #ff005e, #ff8000);
+    padding: 12px 30px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.3em;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    transition: 0.3s;
+  }
+
+  .fight-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px #ff8000; }
+  
+  /* Play Mode Styles */
+  .play-mode {
+    margin: 15px 0;
+  }
+  
+  .play-mode h3 {
+    font-size: 1.4em;
+    color: #00ffff;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+  
+  .mode-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .mode-btn {
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .mode-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .mode-btn.active {
+    background: linear-gradient(90deg, #00a2ff, #0055ff);
+    border-color: #00ffff;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+  
+  /* Fight Back Popup Styles */
+  #fightBackPopup {
+    visibility: visible !important;
+    position: absolute !important;
+    z-index: 9999 !important;
+  }
+  
+  #fightBackPopup .bubble-chat {
+    visibility: visible !important;
+    width: 250px !important;
+    background: linear-gradient(135deg, #ffe6eb, #ffb6c1) !important;
+    color: #d40000 !important;
+    padding: 12px 16px !important;
+    border-radius: 10px;
+    position: relative;
+  }
+  
+  /* Arrow pointer removed as requested */
+  
+  #fightBackPopup .bubble-content div {
+    line-height: 1.3 !important;
+    margin-bottom: 4px !important;
+    font-weight: 500 !important;
+  }
+</style>
+</head>
+
+<body>
+<!-- MAIN MENU -->
+<div class="main-menu" id="mainMenu">
+  <h1 class="menu-title">Run For Your Life</h1>
+  <div class="menu-buttons">
+    <div class="menu-btn" id="startGame">Start Game</div>
+    <div class="menu-btn">Donate</div>
+    <div class="menu-btn">Leaderboard</div>
+    <div class="menu-btn">About</div>
+  </div>
+</div>
+
+<!-- CHARACTER SELECT (original code intact) -->
+<div class="container" id="characterContainer" style="display:none;">
+  <div class="char-list">
+    <div class="char-thumb active rarity-common" data-char="ganyu"><img src="assets/images/character_1.png" alt=""></div>
+    <div class="char-thumb rarity-common" data-char="raiden"><img src="assets/images/character_2.png" alt=""></div>
+    <div class="char-thumb rarity-common" data-char="hutao"><img src="assets/images/character_3.png" alt=""></div>
+    <div class="char-thumb rarity-rare" data-char="keqing"><img src="assets/images/character_4.png" alt=""></div>
+    <div class="char-thumb rarity-rare" data-char="ayaka"><img src="assets/images/character_5.png" alt=""></div>
+    <div class="char-thumb rarity-rare" data-char="yoimiya"><img src="assets/images/character_6.png" alt=""></div>
+    <div class="char-thumb rarity-epic" data-char="nahida"><img src="assets/images/character_7.png" alt=""></div>
+    <div class="char-thumb rarity-epic" data-char="wanderer"><img src="assets/images/character_8.png" alt=""></div>
+  </div>
+
+  <div class="char-display">
+    <img src="assets/images/character_1.png" class="active" id="ganyu">
+    <img src="assets/images/character_2.png" id="raiden">
+    <img src="assets/images/character_3.png" id="hutao">
+    <img src="assets/images/character_4.png" id="keqing">
+    <img src="assets/images/character_5.png" id="ayaka">
+    <img src="assets/images/character_6.png" id="yoimiya">
+    <img src="assets/images/character_7.png" id="nahida">
+    <img src="assets/images/character_8.png" id="wanderer">
+  </div>
+
+  <div class="char-info">
+    <div class="info-text" id="info">
+      <h2>Ganyu</h2>
+      <p>The secretary at Yuehai Pavilion. The blood of the qilin, an illuminated beast, flows within her veins.</p>
+      <p><strong>Skill:</strong> Frostflake Arrow - Deals Cryo DMG to enemies in area upon bloom.</p>
+    </div>
+    
+    <div class="play-mode">
+      <h3>Play mode</h3>
+      <div class="mode-buttons">
+        <button class="mode-btn active" id="survival-btn">Survival</button>
+        <button class="mode-btn" id="fight-back-btn">Fight Back</button>
+      </div>
+    </div>
+    
+    <button class="fight-btn" id="fight-btn">Fight !!</button>
+  </div>
+</div>
+
+<!-- Load scripts -->
+<script src="characters.js"></script>
+<script src="comingSoonPopup.js"></script>
+<script src="storyPopup.js"></script>
+
+<script>
+  // ---- MENU TRANSITION ----
+  const mainMenu = document.getElementById('mainMenu');
+  const characterContainer = document.getElementById('characterContainer');
+
+  document.getElementById('startGame').addEventListener('click', () => {
+    mainMenu.classList.add('hidden');
+    setTimeout(() => {
+      mainMenu.style.display = 'none';
+      characterContainer.style.display = 'flex';
+      document.body.classList.add('character-active');
+    }, 1000);
+  });
+
+  // ---- ORIGINAL CHARACTER SELECTION LOGIC (unchanged) ----
+  const characters = {
+    ganyu: {
+      name: "Ganyu",
+      desc: "The secretary at Yuehai Pavilion. The blood of the qilin, an illuminated beast, flows within her veins.",
+      skill: "Frostflake Arrow - Deals Cryo DMG to enemies in area upon bloom."
+    },
+    raiden: {
+      name: "Raiden Shogun",
+      desc: "The Electro Archon of Inazuma. Embodies eternity and wields the Musou Isshin.",
+      skill: "Secret Art: Musou Shinsetsu - Slashes with Electro-infused blade."
+    },
+    hutao: {
+      name: "Hu Tao",
+      desc: "The 77th Director of the Wangsheng Funeral Parlor. Cheerful yet mysterious.",
+      skill: "Guide to Afterlife - Converts HP into Pyro ATK bonus."
+    },
+    keqing: {
+      name: "Keqing",
+      desc: "The Yuheng of the Liyue Qixing, a decisive and lightning-fast swordswoman.",
+      skill: "Starward Sword - Teleports and deals Electro DMG in area."
+    },
+    ayaka: {
+      name: "Kamisato Ayaka",
+      desc: "The elegant daughter of the Kamisato Clan, known for her graceful swordsmanship.",
+      skill: "Kamisato Art: Soumetsu - Creates a snowstorm that continuously deals Cryo DMG."
+    },
+    yoimiya: {
+      name: "Yoimiya",
+      desc: "Owner of Naganohara Fireworks, the Queen of the Summer Festival.",
+      skill: "Niwabi Fire-Dance - Converts normal attacks to Pyro-infused arrows."
+    },
+    nahida: {
+      name: "Nahida",
+      desc: "The Dendro Archon of Sumeru, the God of Wisdom in a small body.",
+      skill: "All Schemes to Know - Releases karmic bonds to deal Dendro DMG."
+    },
+    wanderer: {
+      name: "Wanderer",
+      desc: "A mysterious man with a troubled past who roams the skies freely.",
+      skill: "Hanega: Song of the Wind - Allows him to hover and deal Anemo DMG."
+    }
+  };
+
+  const thumbs = document.querySelectorAll('.char-thumb');
+  const displayImages = document.querySelectorAll('.char-display img');
+  const infoBox = document.getElementById('info');
+  let selectedCharacter = 'ganyu';
+
+  thumbs.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      thumbs.forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+      const id = thumb.dataset.char;
+      selectedCharacter = id;
+      displayImages.forEach(img => {
+        img.classList.remove('active');
+        if (img.id === id) img.classList.add('active');
+      });
+      const c = characters[id];
+      infoBox.innerHTML = `<h2>${c.name}</h2><p>${c.desc}</p><p><strong>Skill:</strong> ${c.skill}</p>`;
+    });
+  });
+
+    // Play mode buttons functionality
+  let selectedMode = 'survival'; // Default mode
+  const survivalBtn = document.getElementById('survival-btn');
+  const fightBackBtn = document.getElementById('fight-back-btn');
+  
+  // Add event listeners to mode buttons
+  survivalBtn.addEventListener('click', () => {
+    survivalBtn.classList.add('active');
+    fightBackBtn.classList.remove('active');
+    selectedMode = 'survival';
+  });
+  
+  fightBackBtn.addEventListener('click', () => {
+    fightBackBtn.classList.add('active');
+    survivalBtn.classList.remove('active');
+    selectedMode = 'fightback';
+    
+    // Show popup for Fight Back mode
+    if (window.ComingSoonPopup && window.ComingSoonPopup.show) {
+      // Create a custom popup for Fight Back mode
+      showFightBackPopup();
+    } else {
+      alert('Tôi cần thêm kinh phí để phát triển chế độ này. Hãy donate cho tôi nhé');
+    }
+  });
+  
+  // Function to show Fight Back popup
+  function showFightBackPopup() {
+    // Create popup elements
+    const popupElement = document.createElement('div');
+    popupElement.id = 'fightBackPopup';
+    popupElement.className = 'coming-soon-popup';
+    popupElement.style.display = 'none';
+    
+    // Create the popup bubble
+    const bubbleElement = document.createElement('div');
+    bubbleElement.className = 'bubble-chat';
+    
+    // Create the popup content
+    const contentElement = document.createElement('div');
+    contentElement.className = 'bubble-content';
+    
+    // Create message
+    const message = document.createElement('div');
+    message.textContent = 'Tôi cần thêm kinh phí để phát triển chế độ này. Hãy donate cho tôi nhé';
+    
+    contentElement.appendChild(message);
+    bubbleElement.appendChild(contentElement);
+    popupElement.appendChild(bubbleElement);
+    
+    // Remove existing popup if it exists
+    const existingPopup = document.getElementById('fightBackPopup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+    
+    // Add the popup to the body
+    document.body.appendChild(popupElement);
+    
+    // Position the popup at the top-left of the Fight Back button, but higher
+    const buttonRect = fightBackBtn.getBoundingClientRect();
+    popupElement.style.position = 'fixed';
+    popupElement.style.left = `${buttonRect.left - 180}px`;
+    popupElement.style.top = `${buttonRect.top - 120}px`; // Increased from -80px to -120px to position it higher
+    
+    // Show the popup
+    popupElement.style.display = 'block';
+    
+    // Add click event to close the popup when clicking elsewhere
+    document.addEventListener('click', function closePopup(event) {
+      if (popupElement && !popupElement.contains(event.target) && event.target !== fightBackBtn) {
+        popupElement.style.display = 'none';
+        document.removeEventListener('click', closePopup);
+      }
+    });
+  }
+
+  document.getElementById('fight-btn').addEventListener('click', (event) => {
+    console.log('Fight button clicked, selected character:', selectedCharacter);
+    event.preventDefault(); // Always prevent default to avoid any navigation
+    
+    // Check if ComingSoonPopup exists
+    if (!window.ComingSoonPopup) {
+      console.error('ComingSoonPopup not initialized!');
+      if (typeof initComingSoonPopup === 'function') {
+        console.log('Initializing ComingSoonPopup directly');
+        initComingSoonPopup();
+      }
+    }
+    
+    // Check if the selected character is coming soon
+    const isComingSoon = window.ComingSoonPopup ? 
+      window.ComingSoonPopup.isComingSoon(selectedCharacter) : 
+      (selectedCharacter !== 'ganyu'); // Fallback if ComingSoonPopup not available
+    
+    console.log('Is character coming soon?', isComingSoon);
+    
+    if (isComingSoon) {
+      console.log('Character is coming soon, showing popup');
+      // Get the button element directly (more reliable)
+      const button = document.getElementById('fight-btn');
+      
+      // Show the coming soon popup directly on top of the button
+      if (window.ComingSoonPopup && window.ComingSoonPopup.show) {
+        // Let the showComingSoonPopup function handle the positioning
+        window.ComingSoonPopup.show(0, 0); // Values will be ignored, using button reference instead
+      } else {
+        console.error('ComingSoonPopup.show not available');
+        alert('Tôi cần thêm kinh phí để phát triển nhân vật này. Hãy donate cho tôi nhé');
+      }
+      
+      return false;
+    } else {
+      console.log('Starting game with character:', selectedCharacter);
+      
+      // For character 1 (ganyu), show the story popup instead of directly starting the game
+      if (selectedCharacter === 'ganyu') {
+        console.log('Showing story popup for character 1');
+        if (window.StoryPopup && window.StoryPopup.show) {
+          window.StoryPopup.show();
+        } else {
+          console.error('StoryPopup.show not available');
+          // Fallback to normal game start
+          localStorage.setItem('selectedCharacter', selectedCharacter);
+          localStorage.setItem('gameMode', selectedMode);
+          window.location.href = 'game_update.html';
+        }
+      } else {
+        // Normal flow - start the game for other characters
+        localStorage.setItem('selectedCharacter', selectedCharacter);
+        localStorage.setItem('gameMode', selectedMode); // Save the selected mode
+        window.location.href = 'game_update.html';
+      }
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anime Dodge Game - Nộ Skill + Multiple Objects</title>
+
+<!-- Gaming font -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<!-- Link to external CSS file -->
+<link rel="stylesheet" href="assets/game.css">
+<!-- Include popup.js script -->
+<script src="popup.js" defer></script>
+<!-- Include characters.js script -->
+<script src="characters.js"></script>
+<!-- Ensure game over screen is hidden on page load -->
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    // Hide game over screen
+    const gameOverScreen = document.getElementById('game-over');
+    gameOverScreen.style.display = 'none';
+    gameOverScreen.style.zIndex = '-1';
+    
+    // Make sure tutorial shows up properly
+    setTimeout(function() {
+      const tutorialPopup = document.getElementById('tutorialPopup');
+      if (tutorialPopup) {
+        tutorialPopup.style.display = 'flex';
+      }
+    }, 100);
+  });
+</script>
+</head>
+<body>
+  <div id="game-area">
+    <!-- world is the large map that will be translated (camera) -->
+    <div id="world">
+      <!-- Nhân vật -->
+      <img id="girl" src="assets/images/character-run-1.webp" alt="Game character">
+      <!-- objects will be appended here -->
+    </div>
+
+    <!-- HUD timer (fixed) -->
+    <div id="hud">⏱ 0.0s</div>
+    <!-- Best survival time display -->
+    <div id="best-time" style="position: absolute; top: 14px; left: 18px; font-size: 20px; color: #fff; z-index: 60; text-shadow: 0 2px 8px rgba(0,0,0,0.6);">Your highest score: 0.0s</div>
+
+    <!-- Game over overlay -->
+    <div id="game-over">
+      <div class="title">You lost 😢</div>
+      <div class="survive" id="survive-text">You survived: 0.0 seconds</div>
+      <div class="button-container">
+        <button id="retry-btn">Play again</button>
+        <button id="main-menu-btn">Main Menu</button>
+      </div>
+    </div>
+
+    <!-- Energy bar bottom center (fixed viewport) -->
+    <div id="energy-wrap">
+      <div id="energy-bar">
+        <div id="energy-fill"></div>
+      </div>
+      <div id="energy-label">
+        <div id="press-space" class="press-space" style="opacity:0">Spacebar !!!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial popup (shown at start of each new game) -->
+  <div id="tutorialPopup" class="popup" style="display:none;">
+    <div class="popup-box">
+      <h2>Hướng dẫn</h2>
+      <!-- Replace this src with your 19:6 tutorial image URL -->
+      <img id="tutorialImage" src="assets/images/tutorial.jpg" alt="Hướng dẫn (19:6)">
+      <button id="understandBtn" class="btn">Got it !!!</button>
+    </div>
+  </div>
+
+  <!-- Countdown overlay -->
+  <div id="countdownOverlay" style="display:none;">
+    <div class="num" id="countdownNumber">3</div>
+  </div>
+  
+  <!-- Audio elements for game sounds -->
+  <audio id="windSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3" type="audio/mpeg">
+  </audio>
+
+<script>
+/* ----------------------------
+  Global variables / settings
+-----------------------------*/
+const area = document.getElementById('game-area');
+const world = document.getElementById('world');
+const girl = document.getElementById('girl');
+const hud = document.getElementById('hud');
+const bestTimeDisplay = document.getElementById('best-time');
+const gameOverScreen = document.getElementById('game-over');
+const surviveText = document.getElementById('survive-text');
+const retryBtn = document.getElementById('retry-btn');
+const mainMenuBtn = document.getElementById('main-menu-btn');
+
+// Get the selected character from characters.js
+let selectedCharacter = null;
+if (window.GameCharacters && window.GameCharacters.getSelected) {
+  selectedCharacter = window.GameCharacters.getSelected();
+} else {
+  // Fallback if characters.js is not loaded or character not found
+  const characterId = localStorage.getItem('selectedCharacter') || 'ganyu';
+  selectedCharacter = {
+    name: characterId,
+    images: {
+      run1: "assets/images/character-run-1.webp",
+      run2: "assets/images/character-run-2.webp"
+    }
+  };
+}
+
+const energyFillEl = document.getElementById('energy-fill');
+const pressSpaceEl = document.getElementById('press-space');
+
+const tutorialPopup = document.getElementById('tutorialPopup');
+const understandBtn = document.getElementById('understandBtn');
+const countdownOverlay = document.getElementById('countdownOverlay');
+const countdownNumber = document.getElementById('countdownNumber');
+const windSound = document.getElementById('windSound');
+
+let mapWidth = 2400;
+let mapHeight = 1600;
+
+/* player position in world coordinates */
+let girlX = mapWidth / 2;
+let girlY = mapHeight / 2;
+const girlSpeed = 6;
+
+let keys = {};
+let gameRunning = false; // start false until user closes popup and countdown
+let characterDirection = 'right'; // track character direction: 'left' or 'right'
+
+// spawn + movement
+let objects = []; // array of object items {el, x,y, vx,vy, type, state}
+let spawnTimer = null;
+
+// timer & difficulty
+let startTime = null;
+let timerInterval = null;
+let baseSpeed = 2.0;
+let maxSpeed = 5.0;
+let currentSpeed = baseSpeed;
+let difficultyInterval = null;
+let bestSurvivalTime = 0; // Track best survival time
+
+/* -------------
+   Energy (Nộ)
+-------------*/
+const fullTime = 7.0; // user requested 7s to fill
+let energy = 0; // 0..1
+let energyInterval = null;
+let energyFilling = true;
+
+/* ------------------------
+  Object types declaration
+-------------------------*/
+const objectTypes = [
+  {
+    id: 'heart',
+    img: 'assets/images/meme1.jpg',
+    size: 40,
+    speedMul: 1.0
+  },
+  {
+    id: 'shuriken',
+    img: 'assets/images/meme2.jpg',
+    size: 36,
+    speedMul: 0.9
+  },
+  {
+    id: 'star',
+    img: 'assets/images/meme3.jpg',
+    size: 44,
+    speedMul: 0.7
+  },
+  {
+    id: 'bomb',
+    img: 'assets/images/meme4.jpg',
+    size: 48,
+    speedMul: 1.2
+  }
+];
+
+/* -----------------------
+  Controls
+------------------------*/
+window.addEventListener('keydown', e => {
+  // prevent default for space to avoid scrolling when overlay off
+  if (e.code === 'Space') e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+
+  if (e.code === 'Space') {
+    tryUseSkill();
+  }
+});
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+/* -----------------------
+  Camera (viewport) variables
+------------------------*/
+let cameraX = 0;
+let cameraY = 0;
+
+/* -----------------------
+  Movement loop with camera follow
+------------------------*/
+function moveGirlLoop() {
+  if (!gameRunning) return;
+
+  let oldX = girlX;
+  
+  if (keys['w'] || keys['arrowup']) girlY -= girlSpeed;
+  if (keys['s'] || keys['arrowdown']) girlY += girlSpeed;
+  if (keys['a'] || keys['arrowleft']) {
+    girlX -= girlSpeed;
+    if (characterDirection !== 'left') {
+      characterDirection = 'left';
+      girl.src = selectedCharacter.images.run1;
+    }
+  }
+  if (keys['d'] || keys['arrowright']) {
+    girlX += girlSpeed;
+    if (characterDirection !== 'right') {
+      characterDirection = 'right';
+      girl.src = selectedCharacter.images.run2;
+    }
+  }
+
+  // constrain inside map
+  girlX = Math.max(30, Math.min(mapWidth - 30, girlX));
+  girlY = Math.max(30, Math.min(mapHeight - 30, girlY));
+
+  // position girl element (within world)
+  girl.style.left = girlX + 'px';
+  girl.style.top = girlY + 'px';
+
+  // camera centers on player but constrained by map edges
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+
+  cameraX = Math.round(girlX - viewportW / 2);
+  cameraY = Math.round(girlY - viewportH / 2);
+
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+
+  // apply transform to world (negative camera)
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+
+  requestAnimationFrame(moveGirlLoop);
+}
+
+/* -----------------------
+  Spawn objects (random type) - spawn based on map bounds
+------------------------*/
+function spawnObjectOnce() {
+  if (!gameRunning) return;
+
+  const type = objectTypes[Math.floor(Math.random() * objectTypes.length)];
+  const el = document.createElement('div');
+  el.classList.add('object');
+  el.style.width = type.size + 'px';
+  el.style.height = type.size + 'px';
+  el.style.backgroundImage = `url(${type.img})`;
+
+  // spawn on random side OUTSIDE of map so they travel in
+  const side = Math.floor(Math.random() * 4);
+  let x, y;
+  if (side === 0) { x = random(0, mapWidth); y = -60; }
+  if (side === 1) { x = mapWidth + 60; y = random(0, mapHeight); }
+  if (side === 2) { x = random(0, mapWidth); y = mapHeight + 60; }
+  if (side === 3) { x = -60; y = random(0, mapHeight); }
+
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  world.appendChild(el);
+
+  // initial velocity toward player (will be updated each frame)
+  const base = currentSpeed * type.speedMul;
+  const jitter = random(-0.6, 0.6);
+  const obj = {
+    el,
+    x, y,
+    vx: 0,
+    vy: 0,
+    speed: Math.max(0.8, base + jitter),
+    type,
+    state: 'normal' // normal | pushed | vanishing
+  };
+
+  objects.push(obj);
+
+  // schedule next spawn
+  const nextMs = random(700, 1500);
+  spawnTimer = setTimeout(spawnObjectOnce, nextMs);
+}
+
+/* -----------------------
+  Objects main loop
+------------------------*/
+function objectsLoop() {
+  if (!gameRunning) return;
+
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i];
+
+    if (o.state === 'normal') {
+      // move toward player
+      const dx = girlX - o.x;
+      const dy = girlY - o.y;
+      const dist = Math.hypot(dx, dy) || 0.0001;
+      o.vx = (dx / dist) * o.speed;
+      o.vy = (dy / dist) * o.speed;
+
+      o.x += o.vx;
+      o.y += o.vy;
+
+    } else if (o.state === 'pushed') {
+      // when pushed, move according to vx/vy set by skill
+      o.x += o.vx;
+      o.y += o.vy;
+    }
+
+    o.el.style.left = o.x + 'px';
+    o.el.style.top = o.y + 'px';
+
+    // collision detection (only when normal)
+    if (o.state === 'normal') {
+      const dx1 = o.x - girlX;
+      const dy1 = o.y - girlY;
+      const distance = Math.hypot(dx1, dy1);
+      const hitRadius = 50; // same as before
+      if (distance < hitRadius) {
+        // hit -> game over
+        triggerGameOver();
+        break;
+      }
+    }
+
+    // out of bounds cleanup (if far away outside map by margin)
+    if (o.x < -300 || o.x > mapWidth + 300 || o.y < -300 || o.y > mapHeight + 300) {
+      removeObjectAtIndex(i);
+    }
+  }
+
+  requestAnimationFrame(objectsLoop);
+}
+
+/* -----------------------
+  Skill: Push (Space)
+------------------------*/
+const SKILL_RADIUS = 200;  // pixels
+const PUSH_SPEED = 8;      // initial v magnitude when pushed
+function tryUseSkill() {
+  if (!gameRunning) return;
+  if (energy < 0.999) return; // only when full
+
+  // Use skill: find objects within SKILL_RADIUS
+  let affected = 0;
+  for (let i = 0; i < objects.length; i++) {
+    const o = objects[i];
+    if (o.state !== 'normal') continue;
+    const dx = o.x - girlX;
+    const dy = o.y - girlY;
+    const dist = Math.hypot(dx, dy);
+    if (dist <= SKILL_RADIUS) {
+      // push away
+      const nx = dx / (dist || 1);
+      const ny = dy / (dist || 1);
+      o.vx = nx * (PUSH_SPEED + (Math.random() * 2));
+      o.vy = ny * (PUSH_SPEED + (Math.random() * 2));
+      o.state = 'pushed';
+
+      // add vanish animation by CSS and set timeout to remove
+      o.el.style.transition = 'transform 0.6s linear, opacity 0.6s linear';
+      o.el.style.animation = 'vanish 0.6s forwards';
+      // schedule removal after animation
+      setTimeout(() => {
+        try { o.el.remove(); } catch(e) {}
+        const idx = objects.indexOf(o);
+        if (idx !== -1) objects.splice(idx, 1);
+      }, 620);
+
+      affected++;
+    }
+  }
+
+  // Visual feedback - both screen flash and wind effect
+  flashScreen();
+  createWindEffect();
+
+  // Reset energy and start filling again after use
+  energy = 0;
+  energyFilling = true;
+  updateEnergyUI();
+
+  return affected;
+}
+
+/* small screen flash / shake effect */
+function flashScreen() {
+  const el = document.createElement('div');
+  el.style.position = 'fixed';
+  el.style.inset = '0';
+  el.style.zIndex = 190;
+  el.style.pointerEvents = 'none';
+  el.style.background = 'radial-gradient(circle at center, rgba(255,255,255,0.06), transparent 30%)';
+  el.style.opacity = '1';
+  document.body.appendChild(el);
+  setTimeout(()=> {
+    el.style.transition = 'opacity 300ms';
+    el.style.opacity = '0';
+  }, 20);
+  setTimeout(()=> el.remove(), 360);
+}
+
+/* Wind effect around character */
+function createWindEffect() {
+  // Create multiple wind circles with different sizes and durations for a layered effect
+  const sizes = [400, 350, 300]; // Different sizes for the wind effect circles
+  const delays = [0, 100, 200]; // Staggered delays for each circle
+  
+  // Play wind sound effect
+  try {
+    windSound.currentTime = 0; // Reset to start
+    windSound.volume = 0.6;     // Set volume (0.0 to 1.0)
+    windSound.play().catch(e => console.log('Audio play failed:', e));
+  } catch(e) {}
+  
+  sizes.forEach((size, index) => {
+    setTimeout(() => {
+      const windEl = document.createElement('div');
+      windEl.classList.add('wind-effect');
+      
+      // Position it centered on the character
+      windEl.style.width = size + 'px';
+      windEl.style.height = size + 'px';
+      windEl.style.left = girlX + 'px';
+      windEl.style.top = girlY + 'px';
+      windEl.style.transform = 'translate(-50%, -50%) scale(0)';
+      
+      // Add a slight color variation for each layer
+      const hue = 190 + (index * 15); // Bluish wind with slight variations
+      windEl.style.filter = `hue-rotate(${hue}deg)`;
+      
+      // Add to world (not fixed to viewport)
+      world.appendChild(windEl);
+      
+      // Remove after animation completes
+      setTimeout(() => {
+        try { windEl.remove(); } catch(e) {}
+      }, 800); // Match the animation duration
+    }, delays[index]);
+  });
+}
+
+/* -----------------------
+  Energy (nộ) fill loop
+------------------------*/
+function startEnergyFill() {
+  if (energyInterval) clearInterval(energyInterval);
+  energyInterval = setInterval(() => {
+    if (!gameRunning) return;
+    if (!energyFilling) return;
+    energy += (0.05 / fullTime);
+    if (energy >= 0.999) {
+      energy = 1;
+      energyFilling = false;
+      showPressSpace(true);
+    }
+    updateEnergyUI();
+  }, 50);
+}
+
+/* Update energy bar UI */
+function updateEnergyUI() {
+  const pct = Math.round(energy * 100);
+  energyFillEl.style.width = pct + '%';
+  if (energy < 1) showPressSpace(false);
+}
+
+/* show/hide press space and add attention style */
+function showPressSpace(on) {
+  if (on) {
+    pressSpaceEl.style.opacity = '1';
+    pressSpaceEl.classList.add('attention');
+    pressSpaceEl.style.pointerEvents = 'auto';
+  } else {
+    pressSpaceEl.style.opacity = '0';
+    pressSpaceEl.classList.remove('attention');
+    pressSpaceEl.style.pointerEvents = 'none';
+  }
+}
+
+/* -----------------------
+  Timer and difficulty increase
+------------------------*/
+function startTimerAndDifficulty() {
+  startTime = Date.now();
+  // Reset timer display to 0
+  hud.textContent = `⏱ 0.0s`;
+  
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    hud.textContent = `⏱ ${elapsed}s`;
+  }, 100);
+
+  if (difficultyInterval) clearInterval(difficultyInterval);
+  difficultyInterval = setInterval(()=> {
+    currentSpeed = Math.min(currentSpeed + 0.5, maxSpeed);
+  }, 5000);
+}
+
+/* -----------------------
+  Utilities
+------------------------*/
+function random(min, max){ return Math.random() * (max - min) + min; }
+
+/* remove an object by index (cleanup) */
+function removeObjectAtIndex(i) {
+  if (i < 0 || i >= objects.length) return;
+  const o = objects[i];
+  try { o.el.remove(); } catch(e) {}
+  objects.splice(i,1);
+}
+
+/* cleanup all objects immediately */
+function cleanupAllObjects() {
+  if (spawnTimer) { clearTimeout(spawnTimer); spawnTimer = null; }
+  objects.forEach(o => {
+    try { o.el.remove(); } catch(e) {}
+  });
+  objects = [];
+}
+
+/* -----------------------
+  Game over & restart
+------------------------*/
+function triggerGameOver() {
+  if (!gameRunning) return;
+  gameRunning = false;
+
+  // stop timers
+  if (spawnTimer) { clearTimeout(spawnTimer); spawnTimer = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (difficultyInterval) { clearInterval(difficultyInterval); difficultyInterval = null; }
+  if (energyInterval) { clearInterval(energyInterval); energyInterval = null; }
+
+  // compute elapsed
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  surviveText.textContent = `You survived: ${elapsed} seconds`;
+  
+  // Save best time if current time is better
+  saveBestTime(elapsed);
+
+  // cleanup objects
+  cleanupAllObjects();
+
+  // overlay on top - ensure all style properties are set correctly
+  gameOverScreen.style.display = 'flex';
+  gameOverScreen.style.alignItems = 'center';
+  gameOverScreen.style.flexDirection = 'column';
+  gameOverScreen.style.justifyContent = 'center';
+  gameOverScreen.style.zIndex = 200;
+  gameOverScreen.style.opacity = '1';
+}
+
+/* restart triggers popup (user requested popup at start of new game) */
+function restartGame() {
+  // hide overlay and ensure it stays hidden
+  gameOverScreen.style.display = 'none';
+  gameOverScreen.style.zIndex = '-1'; // Put it behind everything to ensure it doesn't show
+
+  // reset variables
+  currentSpeed = baseSpeed;
+  energy = 0;
+  energyFilling = true;
+  updateEnergyUI();
+  showPressSpace(false);
+
+  // cleanup old objects
+  cleanupAllObjects();
+
+  // reset player pos
+  girlX = mapWidth / 2;
+  girlY = mapHeight / 2;
+  characterDirection = 'right'; // reset direction
+  girl.src = selectedCharacter.images.run1; // reset to default image
+  girl.style.left = girlX + 'px';
+  girl.style.top = girlY + 'px';
+
+  // reset camera
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, Math.round(girlX - viewportW / 2)));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, Math.round(girlY - viewportH / 2)));
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+
+  // show tutorial popup before starting countdown/game
+  showTutorialPopup(true);
+}
+
+/* -----------------------
+  Bind retry and main menu buttons
+------------------------*/
+retryBtn.onclick = () => {
+  window.open('https://your-ad-link-here.com', '_blank');
+  // small delay to allow tab open
+  setTimeout(restartGame, 80);
+};
+
+// Main Menu button redirects to index.html
+mainMenuBtn.onclick = () => {
+  window.location.href = 'index.html';
+};
+
+/* -----------------------
+  Tutorial popup + countdown
+------------------------*/
+// Use the showTutorialPopup function from popup.js
+function showTutorialPopup(on) {
+  // Call the function from the PopupTutorial module
+  window.PopupTutorial.show(on);
+}
+
+// Expose the startCountdownThenStartGame function to the window object
+window.startCountdownThenStartGame = function() {
+  // Make sure game over screen is completely hidden
+  gameOverScreen.style.display = 'none';
+  gameOverScreen.style.zIndex = '-1';
+  
+  let count = 3;
+  countdownNumber.textContent = count;
+  countdownOverlay.style.display = 'flex';
+  countdownOverlay.style.zIndex = 400;
+  // small pop/scale animation each tick
+  const tick = () => {
+    countdownNumber.style.transform = 'scale(1.3)';
+    countdownNumber.style.opacity = '1';
+    setTimeout(()=> {
+      countdownNumber.style.transform = 'scale(1)';
+      countdownNumber.style.opacity = '0.9';
+    }, 140);
+  };
+  tick();
+  const iv = setInterval(() => {
+    count--;
+    if (count <= 0) {
+      clearInterval(iv);
+      countdownOverlay.style.display = 'none';
+      // start the actual game loops
+      startGameLoops();
+    } else {
+      countdownNumber.textContent = count;
+      tick();
+    }
+  }, 1000);
+}
+
+/* Start all loops (call after countdown) */
+function startGameLoops() {
+  // reset objects etc
+  cleanupAllObjects();
+  gameRunning = true;
+  currentSpeed = baseSpeed;
+  startTimerAndDifficulty();
+  startEnergyFill();
+  spawnObjectOnce();
+  objectsLoop();
+  moveGirlLoop();
+  
+  // Make absolutely sure game over screen is hidden
+  gameOverScreen.style.display = 'none';
+  gameOverScreen.style.zIndex = '-1';
+}
+
+/* -----------------------
+  Init at page load: show tutorial popup first
+------------------------*/
+function init() {
+  // sync world size to JS variables if needed (mapWidth/mapHeight)
+  // (map sizes are constants in CSS; change there if you want different)
+  girlX = mapWidth / 2;
+  girlY = mapHeight / 2;
+  characterDirection = 'right'; // set initial direction
+  girl.src = selectedCharacter.images.run1; // set default image using selected character
+  girl.style.left = girlX + 'px';
+  girl.style.top = girlY + 'px';
+  
+  // Load best survival time from localStorage
+  loadBestTime();
+  
+  // Reset game state
+  gameRunning = false;
+  
+  // Ensure game over screen is completely hidden
+  gameOverScreen.style.display = 'none';
+  gameOverScreen.style.zIndex = '-1';
+  gameOverScreen.style.opacity = '0';
+  
+  // Ensure tutorial popup is shown
+  setTimeout(function() {
+    showTutorialPopup(true);
+  }, 200);
+}
+
+/* -----------------------
+  Best survival time functions
+------------------------*/
+function loadBestTime() {
+  const savedTime = localStorage.getItem('bestSurvivalTime');
+  if (savedTime) {
+    bestSurvivalTime = parseFloat(savedTime);
+    updateBestTimeDisplay();
+  }
+}
+
+function updateBestTimeDisplay() {
+  bestTimeDisplay.textContent = `Your highest score: ${bestSurvivalTime.toFixed(1)}s`;
+}
+
+function saveBestTime(time) {
+  const currentTime = parseFloat(time);
+  if (currentTime > bestSurvivalTime) {
+    bestSurvivalTime = currentTime;
+    localStorage.setItem('bestSurvivalTime', bestSurvivalTime.toString());
+    updateBestTimeDisplay();
+  }
+}
+
+// Start
+init();
+
+/* -----------------------
+  Window resize handling
+------------------------*/
+window.addEventListener('resize', () => {
+  // keep player inside bounds
+  girlX = Math.max(30, Math.min(mapWidth - 30, girlX));
+  girlY = Math.max(30, Math.min(mapHeight - 30, girlY));
+  girl.style.left = girlX + 'px';
+  girl.style.top = girlY + 'px';
+  // update camera to not exceed bounds
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+});
+
+</script>
+</body>
+</html>
