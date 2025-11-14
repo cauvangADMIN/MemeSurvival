@@ -246,11 +246,7 @@ const MobileControls = {
         // Enhanced visual feedback
         button.style.opacity = '0.7';
         button.classList.add('active'); // Add active class for animation
-        
-        // Add haptic feedback if available
-        if (window.navigator && window.navigator.vibrate) {
-          window.navigator.vibrate(50); // Short vibration for 50ms
-        }
+        button.classList.add('pressed'); // Add pressed class for press effect
       });
       
       // Touch end - release key
@@ -269,6 +265,13 @@ const MobileControls = {
         // Reset visual feedback
         button.style.opacity = '1';
         button.classList.remove('active'); // Remove active class
+        button.classList.remove('pressed'); // Remove pressed class
+        button.classList.add('released'); // Add released class for release effect
+        
+        // Remove released class after animation completes
+        setTimeout(() => {
+          button.classList.remove('released');
+        }, 300);
       });
       
       // Touch cancel - also release key
@@ -287,6 +290,7 @@ const MobileControls = {
         // Reset visual feedback
         button.style.opacity = '1';
         button.classList.remove('active'); // Remove active class
+        button.classList.remove('pressed'); // Remove pressed class
       });
     });
   },
