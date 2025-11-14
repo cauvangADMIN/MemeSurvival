@@ -106,8 +106,8 @@
   }
 
   .char-list {
-    width: 25%;
-    padding: 15px;
+    width: 23%;
+    padding: 13px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -226,7 +226,14 @@
 
   .char-display img.active { opacity: 1; transform: scale(1); position: relative; }
 
-  .char-info { width: 25%; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+  .char-info { width: 25%; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+  
+  /* Ensure fight button is always visible and clickable */
+  .fight-btn {
+    position: relative;
+    z-index: 10;
+    margin-top: 10px;
+  }
 
   .info-text { animation: fadeIn 1s ease forwards; }
   .info-text h2 { font-size: 2em; margin-bottom: 10px; color: #00ffff; }
