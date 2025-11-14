@@ -156,6 +156,9 @@ const windSound = document.getElementById('windSound');
 let mapWidth = 2400;
 let mapHeight = 1600;
 
+// Camera zoom factor (1.0 = normal, higher = more zoomed out)
+let cameraZoomFactor = 1.0;
+
 // Check if on mobile device
 const isMobileDevice = () => {
   const isTouchDevice = ('ontouchstart' in window) || 
@@ -166,10 +169,42 @@ const isMobileDevice = () => {
   return (isTouchDevice && isSmallScreen) || mobileUserAgent;
 };
 
-// Set larger map size for mobile
+// Function to update zoom factor based on screen size
+function updateZoomFactor() {
+  if (isMobileDevice()) {
+    // Adjust zoom factor based on screen size and orientation for better visibility
+    const isLandscape = window.innerWidth > window.innerHeight;
+    
+    if (isLandscape) {
+      // In landscape mode, we can see more horizontally
+      if (window.innerWidth < 480) {
+        cameraZoomFactor = 1.7; // Smaller phones
+      } else if (window.innerWidth < 768) {
+        cameraZoomFactor = 1.5; // Medium phones
+      } else {
+        cameraZoomFactor = 1.3; // Tablets
+      }
+    } else {
+      // In portrait mode, we need to see even more
+      if (window.innerWidth < 480) {
+        cameraZoomFactor = 1.9; // Smaller phones in portrait
+      } else if (window.innerWidth < 768) {
+        cameraZoomFactor = 1.7; // Medium phones in portrait
+      } else {
+        cameraZoomFactor = 1.5; // Tablets in portrait
+      }
+    }
+  } else {
+    // Desktop stays at normal zoom
+    cameraZoomFactor = 1.0;
+  }
+}
+
+// Set larger map size and update zoom factor for mobile
 if (isMobileDevice()) {
   mapWidth = 3000;
   mapHeight = 2000;
+  updateZoomFactor(); // Set initial zoom factor
 }
 
 /* player position in world coordinates */
@@ -290,12 +325,23 @@ function moveGirlLoop() {
   // camera centers on player but constrained by map edges
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-
-  cameraX = Math.round(girlX - viewportW / 2);
-  cameraY = Math.round(girlY - viewportH / 2);
-
-  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
-  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+  
+  // Apply zoom factor to camera position (higher zoom factor = camera further away)
+  // This creates a virtual viewport that's larger than the actual screen
+  const virtualViewportW = viewportW * cameraZoomFactor;
+  const virtualViewportH = viewportH * cameraZoomFactor;
+  
+  // Calculate camera position with zoom factor
+  cameraX = Math.round(girlX - virtualViewportW / 2);
+  cameraY = Math.round(girlY - virtualViewportH / 2);
+  
+  // Adjust constraints based on zoom factor
+  const extraWidthForZoom = (virtualViewportW - viewportW);
+  const extraHeightForZoom = (virtualViewportH - viewportH);
+  
+  // Constrain camera within map boundaries, accounting for zoom
+  cameraX = Math.max(-extraWidthForZoom/2, Math.min(mapWidth - viewportW + extraWidthForZoom/2, cameraX));
+  cameraY = Math.max(-extraHeightForZoom/2, Math.min(mapHeight - viewportH + extraHeightForZoom/2, cameraY));
 
   // apply transform to world (negative camera)
   world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
@@ -648,11 +694,26 @@ function restartGame() {
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
 
-  // reset camera
+  // reset camera with zoom factor
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  cameraX = Math.max(0, Math.min(mapWidth - viewportW, Math.round(girlX - viewportW / 2)));
-  cameraY = Math.max(0, Math.min(mapHeight - viewportH, Math.round(girlY - viewportH / 2)));
+  
+  // Apply zoom factor
+  const virtualViewportW = viewportW * cameraZoomFactor;
+  const virtualViewportH = viewportH * cameraZoomFactor;
+  
+  // Calculate camera position with zoom
+  cameraX = Math.round(girlX - virtualViewportW / 2);
+  cameraY = Math.round(girlY - virtualViewportH / 2);
+  
+  // Adjust constraints based on zoom factor
+  const extraWidthForZoom = (virtualViewportW - viewportW);
+  const extraHeightForZoom = (virtualViewportH - viewportH);
+  
+  // Constrain camera within map boundaries, accounting for zoom
+  cameraX = Math.max(-extraWidthForZoom/2, Math.min(mapWidth - viewportW + extraWidthForZoom/2, cameraX));
+  cameraY = Math.max(-extraHeightForZoom/2, Math.min(mapHeight - viewportH + extraHeightForZoom/2, cameraY));
+  
   world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
 
   // show tutorial popup before starting countdown/game
@@ -750,6 +811,28 @@ function init() {
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
   
+  // Set initial camera position with zoom factor
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+  
+  // Apply zoom factor
+  const virtualViewportW = viewportW * cameraZoomFactor;
+  const virtualViewportH = viewportH * cameraZoomFactor;
+  
+  // Calculate camera position with zoom
+  cameraX = Math.round(girlX - virtualViewportW / 2);
+  cameraY = Math.round(girlY - virtualViewportH / 2);
+  
+  // Adjust constraints based on zoom factor
+  const extraWidthForZoom = (virtualViewportW - viewportW);
+  const extraHeightForZoom = (virtualViewportH - viewportH);
+  
+  // Constrain camera within map boundaries, accounting for zoom
+  cameraX = Math.max(-extraWidthForZoom/2, Math.min(mapWidth - viewportW + extraWidthForZoom/2, cameraX));
+  cameraY = Math.max(-extraHeightForZoom/2, Math.min(mapHeight - viewportH + extraHeightForZoom/2, cameraY));
+  
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+  
   // Load best survival time from localStorage
   loadBestTime();
   
@@ -798,17 +881,38 @@ init();
   Window resize handling
 ------------------------*/
 window.addEventListener('resize', () => {
+  // Update zoom factor based on new screen size/orientation
+  updateZoomFactor();
+  
   // keep player inside bounds
   girlX = Math.max(30, Math.min(mapWidth - 30, girlX));
   girlY = Math.max(30, Math.min(mapHeight - 30, girlY));
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
-  // update camera to not exceed bounds
+  
+  // update camera to not exceed bounds, using zoom factor
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
-  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+  
+  // Apply zoom factor
+  const virtualViewportW = viewportW * cameraZoomFactor;
+  const virtualViewportH = viewportH * cameraZoomFactor;
+  
+  // Adjust constraints based on zoom factor
+  const extraWidthForZoom = (virtualViewportW - viewportW);
+  const extraHeightForZoom = (virtualViewportH - viewportH);
+  
+  // Constrain camera within map boundaries, accounting for zoom
+  cameraX = Math.max(-extraWidthForZoom/2, Math.min(mapWidth - viewportW + extraWidthForZoom/2, cameraX));
+  cameraY = Math.max(-extraHeightForZoom/2, Math.min(mapHeight - viewportH + extraHeightForZoom/2, cameraY));
+  
   world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+});
+
+// Also listen for orientation change events specifically
+window.addEventListener('orientationchange', () => {
+  // Update zoom factor when orientation changes
+  updateZoomFactor();
 });
 
 </script>
