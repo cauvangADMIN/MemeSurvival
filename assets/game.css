@@ -47,6 +47,7 @@ body {
   width: 2400px;   /* mapWidth (JS keeps in sync) */
   height: 1600px;  /* mapHeight */
   transform: translate(0px, 0px);
+  transform-origin: center center; /* Ensure scaling happens from center */
   will-change: transform;
   pointer-events: none; /* objects handle pointer-events individually if needed */
 }
@@ -58,8 +59,10 @@ body {
   transform: translate(-50%, -50%);
   left: 50%;
   top: 50%;
-  z-index: 4;
-  pointer-events: none;
+  z-index: 10;
+  transform-origin: center center; /* Ensure character scales from center */
+  will-change: transform; /* Optimize for performance */
+  pointer-events: auto; /* Allow interaction with character */
 }
 
 .object {
