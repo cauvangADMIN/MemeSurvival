@@ -18,7 +18,7 @@
 <script src="characters.js"></script>
 <!-- Include mobile controls script -->
 <script src="mobile-controls.js" defer></script>
-<!-- Ensure game over screen is hidden on page load and force fullscreen -->
+<!-- Ensure game over screen is hidden on page load -->
 <script>
   window.addEventListener('DOMContentLoaded', function() {
     // Hide game over screen
@@ -34,29 +34,24 @@
       }
     }, 100);
     
-    // Force fullscreen when entering the page
+    // Force fullscreen on page load
     function requestFullscreen() {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                     ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      
-      if (isMobile) {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-          elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { /* Safari */
-          elem.webkitRequestFullscreen();
-        } else if (elem.mozRequestFullScreen) { /* Firefox */
-          elem.mozRequestFullScreen();
-        } else if (elem.msRequestFullscreen) { /* IE/Edge */
-          elem.msRequestFullscreen();
-        }
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) { /* Firefox */
+        elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) { /* IE/Edge */
+        elem.msRequestFullscreen();
       }
     }
     
-    // Try to request fullscreen on page load
+    // Try to request fullscreen immediately
     requestFullscreen();
     
-    // Also try on first user interaction (needed for iOS)
+    // Also request fullscreen on first user interaction
     document.addEventListener('click', function() {
       requestFullscreen();
     }, { once: true });
@@ -157,8 +152,25 @@ const countdownOverlay = document.getElementById('countdownOverlay');
 const countdownNumber = document.getElementById('countdownNumber');
 const windSound = document.getElementById('windSound');
 
+// Set different map sizes for mobile and desktop
 let mapWidth = 2400;
 let mapHeight = 1600;
+
+// Check if on mobile device
+const isMobileDevice = () => {
+  const isTouchDevice = ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0) || 
+                       (navigator.msMaxTouchPoints > 0);
+  const isSmallScreen = window.innerWidth <= 900;
+  const mobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return (isTouchDevice && isSmallScreen) || mobileUserAgent;
+};
+
+// Set larger map size for mobile
+if (isMobileDevice()) {
+  mapWidth = 3000;
+  mapHeight = 2000;
+}
 
 /* player position in world coordinates */
 let girlX = mapWidth / 2;
@@ -238,10 +250,9 @@ window.addEventListener('keyup', e => {
 
 /* -----------------------
   Camera (viewport) variables
--------------------------*/
+------------------------*/
 let cameraX = 0;
 let cameraY = 0;
-let cameraZoomFactor = 1; // Default zoom factor
 
 /* -----------------------
   Movement loop with camera follow
@@ -276,38 +287,18 @@ function moveGirlLoop() {
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
 
-  // Check if on mobile for wider view
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                 ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  
-  // Set camera zoom factor - wider view on mobile
-  cameraZoomFactor = isMobile ? 1.5 : 1; // 1.5x wider view on mobile
-  
   // camera centers on player but constrained by map edges
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  
-  // Apply zoom factor for mobile to see further
-  const effectiveViewportW = viewportW * cameraZoomFactor;
-  const effectiveViewportH = viewportH * cameraZoomFactor;
-  
-  // Center camera with zoom factor applied
-  cameraX = Math.round(girlX - effectiveViewportW / 2);
-  cameraY = Math.round(girlY - effectiveViewportH / 2);
-  
-  // Constrain camera to map bounds
-  cameraX = Math.max(0, Math.min(mapWidth - effectiveViewportW, cameraX));
-  cameraY = Math.max(0, Math.min(mapHeight - effectiveViewportH, cameraY));
-  
-  // Apply transform to world (negative camera)
-  if (isMobile) {
-    // For mobile, add scale to zoom out
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px) scale(${1/cameraZoomFactor})`;
-    world.style.transformOrigin = 'top left';
-  } else {
-    // For desktop, keep normal view
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
-  }
+
+  cameraX = Math.round(girlX - viewportW / 2);
+  cameraY = Math.round(girlY - viewportH / 2);
+
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+
+  // apply transform to world (negative camera)
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
 
   requestAnimationFrame(moveGirlLoop);
 }
@@ -657,34 +648,12 @@ function restartGame() {
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
 
-  // Check if on mobile for wider view
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                 ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  
-  // Set camera zoom factor - wider view on mobile
-  cameraZoomFactor = isMobile ? 1.5 : 1; // 1.5x wider view on mobile
-  
   // reset camera
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  
-  // Apply zoom factor for mobile to see further
-  const effectiveViewportW = viewportW * cameraZoomFactor;
-  const effectiveViewportH = viewportH * cameraZoomFactor;
-  
-  // Center camera with zoom factor applied
-  cameraX = Math.max(0, Math.min(mapWidth - effectiveViewportW, Math.round(girlX - effectiveViewportW / 2)));
-  cameraY = Math.max(0, Math.min(mapHeight - effectiveViewportH, Math.round(girlY - effectiveViewportH / 2)));
-  
-  // Apply transform to world
-  if (isMobile) {
-    // For mobile, add scale to zoom out
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px) scale(${1/cameraZoomFactor})`;
-    world.style.transformOrigin = 'top left';
-  } else {
-    // For desktop, keep normal view
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
-  }
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, Math.round(girlX - viewportW / 2)));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, Math.round(girlY - viewportH / 2)));
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
 
   // show tutorial popup before starting countdown/game
   showTutorialPopup(true);
@@ -768,8 +737,10 @@ function startGameLoops() {
   Init at page load: show tutorial popup first
 ------------------------*/
 function init() {
-  // sync world size to JS variables if needed (mapWidth/mapHeight)
-  // (map sizes are constants in CSS; change there if you want different)
+  // Update world size in DOM to match JavaScript variables
+  world.style.width = mapWidth + 'px';
+  world.style.height = mapHeight + 'px';
+  
   girlX = mapWidth / 2;
   girlY = mapHeight / 2;
   characterDirection = 'right'; // set initial direction
@@ -830,34 +801,12 @@ window.addEventListener('resize', () => {
   girlY = Math.max(30, Math.min(mapHeight - 30, girlY));
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
-  // Check if on mobile for wider view
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                 ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  
-  // Set camera zoom factor - wider view on mobile
-  cameraZoomFactor = isMobile ? 1.5 : 1; // 1.5x wider view on mobile
-  
   // update camera to not exceed bounds
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  
-  // Apply zoom factor for mobile to see further
-  const effectiveViewportW = viewportW * cameraZoomFactor;
-  const effectiveViewportH = viewportH * cameraZoomFactor;
-  
-  // Constrain camera to map bounds with zoom factor applied
-  cameraX = Math.max(0, Math.min(mapWidth - effectiveViewportW, cameraX));
-  cameraY = Math.max(0, Math.min(mapHeight - effectiveViewportH, cameraY));
-  
-  // Apply transform to world
-  if (isMobile) {
-    // For mobile, add scale to zoom out
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px) scale(${1/cameraZoomFactor})`;
-    world.style.transformOrigin = 'top left';
-  } else {
-    // For desktop, keep normal view
-    world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
-  }
+  cameraX = Math.max(0, Math.min(mapWidth - viewportW, cameraX));
+  cameraY = Math.max(0, Math.min(mapHeight - viewportH, cameraY));
+  world.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
 });
 
 </script>

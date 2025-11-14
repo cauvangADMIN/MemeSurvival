@@ -24,6 +24,21 @@ body {
   overflow: hidden;
 }
 
+/* Make game area wider on mobile */
+@media screen and (max-width: 900px) {
+  #game-area {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Increase map size for mobile */
+  #world {
+    width: 3000px !important; /* Wider world for mobile (was 2400px) */
+    height: 2000px !important; /* Taller world for mobile (was 1600px) */
+  }
+}
+
 /* WORLD: bản đồ lớn chứa nhân vật và object */
 #world {
   position: absolute;

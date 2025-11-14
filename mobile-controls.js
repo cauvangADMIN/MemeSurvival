@@ -22,6 +22,9 @@ const MobileControls = {
     // Create orientation message
     this.createOrientationMessage();
     
+    // Force fullscreen for all devices, not just mobile
+    this.requestFullscreen();
+    
     // Create mobile controls if on mobile, but keep them hidden
     if (this.isMobile) {
       this.createMobileControls();
@@ -30,16 +33,24 @@ const MobileControls = {
       this.hideControls(); // Initially hide controls
       
       // Listen for orientation changes
-      window.addEventListener('resize', () => this.checkOrientation());
-      window.addEventListener('orientationchange', () => this.checkOrientation());
+      window.addEventListener('resize', () => {
+        this.checkOrientation();
+        this.requestFullscreen(); // Try again on resize
+      });
+      window.addEventListener('orientationchange', () => {
+        this.checkOrientation();
+        this.requestFullscreen(); // Try again on orientation change
+      });
       
-      // Try to request fullscreen when page loads
-      document.addEventListener('click', () => this.requestFullscreen(), { once: true });
+      // Try to request fullscreen on various user interactions
+      document.addEventListener('click', () => this.requestFullscreen());
+      document.addEventListener('touchstart', () => this.requestFullscreen());
       
       // Listen for tutorial close event
       window.addEventListener('tutorialClosed', () => {
         this.tutorialClosed = true;
         this.showControls();
+        this.requestFullscreen(); // Try again when tutorial closes
       });
     }
   },
@@ -66,10 +77,8 @@ const MobileControls = {
     console.log("Mobile detection:", this.isMobile);
   },
   
-  // Request fullscreen mode
+  // Request fullscreen mode - enhanced version that works for all devices
   requestFullscreen: function() {
-    if (!this.isMobile) return;
-    
     try {
       const elem = document.documentElement;
       if (elem.requestFullscreen) {
@@ -81,6 +90,13 @@ const MobileControls = {
       } else if (elem.msRequestFullscreen) { /* IE/Edge */
         elem.msRequestFullscreen();
       }
+      
+      // Try to lock orientation if supported
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(e => {
+          console.log('Orientation lock failed:', e);
+        });
+      }
     } catch (e) {
       console.log('Fullscreen request error:', e);
     }
@@ -88,7 +104,8 @@ const MobileControls = {
   
   // Check and handle orientation
   checkOrientation: function() {
-    if (!this.isMobile) return;
+    // Always try to force fullscreen regardless of device type
+    this.requestFullscreen();
     
     // Determine if in landscape mode
     this.isLandscape = window.innerWidth > window.innerHeight;
@@ -99,11 +116,8 @@ const MobileControls = {
       orientationMessage.style.display = this.isLandscape ? 'none' : 'flex';
     }
     
-    // Force landscape orientation if on mobile
+    // Force landscape orientation
     if (!this.isLandscape) {
-      // Try to request fullscreen and landscape orientation if supported
-      this.requestFullscreen();
-      
       // Try to lock orientation if supported
       try {
         if (screen.orientation && screen.orientation.lock) {
