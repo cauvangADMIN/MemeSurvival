@@ -1,0 +1,158 @@
+/* Mobile Controls CSS */
+.mobile-controls {
+  display: none; /* Hidden by default, shown only on mobile */
+  position: fixed;
+  z-index: 100;
+  pointer-events: none; /* The container doesn't capture events */
+}
+
+/* D-pad styles */
+.dpad-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 150px;
+  height: 150px;
+  pointer-events: auto; /* Allow interaction */
+}
+
+.dpad {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dpad-button {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dpad-up {
+  top: 0;
+  transform: translateY(10px);
+}
+
+.dpad-right {
+  right: 0;
+  transform: translateX(-10px);
+}
+
+.dpad-down {
+  bottom: 0;
+  transform: translateY(-10px);
+}
+
+.dpad-left {
+  left: 0;
+  transform: translateX(10px);
+}
+
+.dpad-center {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Space button styles */
+.space-button-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  pointer-events: auto; /* Allow interaction */
+}
+
+.space-button {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(0, 242, 96, 0.7), rgba(5, 117, 230, 0.7));
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.space-button.ready {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(0, 242, 96, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(5, 117, 230, 0.9);
+  }
+}
+
+/* Landscape orientation message */
+.orientation-message {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: white;
+  font-family: "Orbitron", sans-serif;
+  text-align: center;
+}
+
+.orientation-message img {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+  animation: rotate 2s infinite linear;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(90deg); }
+}
+
+.orientation-message p {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+/* Only show on portrait orientation on mobile */
+@media screen and (max-width: 900px) and (orientation: portrait) {
+  .orientation-message {
+    display: flex;
+  }
+}
+
+/* Only show mobile controls on mobile devices in landscape */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+  .mobile-controls {
+    display: block;
+  }
+}

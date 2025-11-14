@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Anime Dodge Game - Nộ Skill + Multiple Objects</title>
 
 <!-- Gaming font -->
@@ -10,10 +10,14 @@
 
 <!-- Link to external CSS file -->
 <link rel="stylesheet" href="assets/game.css">
+<!-- Link to mobile controls CSS -->
+<link rel="stylesheet" href="assets/mobile-controls.css">
 <!-- Include popup.js script -->
 <script src="popup.js" defer></script>
 <!-- Include characters.js script -->
 <script src="characters.js"></script>
+<!-- Include mobile controls script -->
+<script src="mobile-controls.js" defer></script>
 <!-- Ensure game over screen is hidden on page load -->
 <script>
   window.addEventListener('DOMContentLoaded', function() {
@@ -487,6 +491,11 @@ function updateEnergyUI() {
   const pct = Math.round(energy * 100);
   energyFillEl.style.width = pct + '%';
   if (energy < 1) showPressSpace(false);
+  
+  // Update mobile space button if function exists
+  if (window.updateMobileSpaceButton) {
+    window.updateMobileSpaceButton(energy >= 0.999);
+  }
 }
 
 /* show/hide press space and add attention style */
