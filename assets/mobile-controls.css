@@ -23,12 +23,15 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3); /* More transparent background */
   border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3), 0 0 5px rgba(0, 150, 255, 0.3); /* Added blue glow */
+  backdrop-filter: blur(2px); /* Add slight blur effect */
+  transition: all 0.2s ease; /* Smooth transitions */
+  border: 1px solid rgba(0, 150, 255, 0.2); /* Subtle blue border */
 }
 
 /* PlayStation D-pad cross shape */
@@ -37,9 +40,10 @@
   position: absolute;
   width: 70%;
   height: 70%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.4); /* More transparent */
   border-radius: 15%;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); /* Lighter shadow */
+  transition: all 0.2s ease; /* Smooth transitions */
 }
 
 /* PlayStation D-pad buttons */
@@ -47,17 +51,19 @@
   position: absolute;
   width: 45px;
   height: 45px;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.4); /* More transparent */
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
+  color: rgba(255, 255, 255, 0.8); /* Slightly transparent text */
   font-weight: bold;
   font-size: 16px;
   user-select: none;
   -webkit-user-select: none;
   text-shadow: 0 0 3px #000;
   z-index: 5;
+  transition: all 0.15s ease; /* Smooth transitions */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
 }
 
 /* Triangle shapes for PlayStation D-pad buttons */
@@ -120,9 +126,24 @@
 
 /* Active states for buttons */
 .dpad-button:active {
-  transform: scale(0.95);
-  background-color: rgba(0, 0, 0, 0.9);
-  box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.3);
+  transform: scale(0.85); /* More pronounced scale effect */
+  background-color: rgba(0, 0, 0, 0.7); /* Darker when pressed */
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5); /* Brighter inner glow */
+  border-color: rgba(255, 255, 255, 0.3); /* Brighter border */
+}
+
+/* Add a pulsing effect for active buttons */
+@keyframes pulse-button {
+  0% { box-shadow: inset 0 0 5px rgba(0, 150, 255, 0.3), 0 0 5px rgba(0, 150, 255, 0.3); }
+  50% { box-shadow: inset 0 0 15px rgba(0, 150, 255, 0.5), 0 0 10px rgba(0, 150, 255, 0.5); }
+  100% { box-shadow: inset 0 0 5px rgba(0, 150, 255, 0.3), 0 0 5px rgba(0, 150, 255, 0.3); }
+}
+
+.dpad-button.active {
+  animation: pulse-button 0.8s infinite;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-color: rgba(0, 150, 255, 0.5); /* Blue border when active */
+  color: rgba(0, 200, 255, 1); /* Brighter blue text when active */
 }
 
 /* Space button styles */

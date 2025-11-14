@@ -644,7 +644,7 @@ function restartGame() {
   girlX = mapWidth / 2;
   girlY = mapHeight / 2;
   characterDirection = 'right'; // reset direction
-  girl.src = selectedCharacter.images.run1; // reset to default image
+  girl.src = selectedCharacter.images.run2; // Use run2 for right direction
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
 
@@ -744,7 +744,9 @@ function init() {
   girlX = mapWidth / 2;
   girlY = mapHeight / 2;
   characterDirection = 'right'; // set initial direction
-  girl.src = selectedCharacter.images.run1; // set default image using selected character
+  
+  // Set the correct image for right-facing direction
+  girl.src = selectedCharacter.images.run2; // Use run2 for right direction
   girl.style.left = girlX + 'px';
   girl.style.top = girlY + 'px';
   

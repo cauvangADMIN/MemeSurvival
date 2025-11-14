@@ -243,8 +243,14 @@ const MobileControls = {
         });
         document.dispatchEvent(keyEvent);
         
-        // Visual feedback
+        // Enhanced visual feedback
         button.style.opacity = '0.7';
+        button.classList.add('active'); // Add active class for animation
+        
+        // Add haptic feedback if available
+        if (window.navigator && window.navigator.vibrate) {
+          window.navigator.vibrate(50); // Short vibration for 50ms
+        }
       });
       
       // Touch end - release key
@@ -262,6 +268,7 @@ const MobileControls = {
         
         // Reset visual feedback
         button.style.opacity = '1';
+        button.classList.remove('active'); // Remove active class
       });
       
       // Touch cancel - also release key
@@ -279,6 +286,7 @@ const MobileControls = {
         
         // Reset visual feedback
         button.style.opacity = '1';
+        button.classList.remove('active'); // Remove active class
       });
     });
   },
