@@ -8,7 +8,7 @@
   height: 100%;
 }
 
-/* D-pad styles */
+/* PlayStation-style D-pad styles */
 .dpad-container {
   position: fixed;
   bottom: 20px;
@@ -23,57 +23,106 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
+/* PlayStation D-pad cross shape */
+.dpad::before {
+  content: '';
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 15%;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* PlayStation D-pad buttons */
 .dpad-button {
   position: absolute;
-  width: 50px;
-  height: 50px;
-  background-color: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 16px;
   user-select: none;
   -webkit-user-select: none;
   text-shadow: 0 0 3px #000;
+  z-index: 5;
 }
 
+/* Triangle shapes for PlayStation D-pad buttons */
+.dpad-button::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Up button */
 .dpad-up {
-  top: 0;
-  transform: translateY(10px);
+  top: 5px;
+  border-radius: 5px 5px 0 0;
+}
+.dpad-up::before {
+  border-width: 0 12px 12px 12px;
+  border-color: transparent transparent rgba(255, 255, 255, 0.7) transparent;
 }
 
+/* Right button */
 .dpad-right {
-  right: 0;
-  transform: translateX(-10px);
+  right: 5px;
+  border-radius: 0 5px 5px 0;
+}
+.dpad-right::before {
+  border-width: 12px 0 12px 12px;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.7);
 }
 
+/* Down button */
 .dpad-down {
-  bottom: 0;
-  transform: translateY(-10px);
+  bottom: 5px;
+  border-radius: 0 0 5px 5px;
+}
+.dpad-down::before {
+  border-width: 12px 12px 0 12px;
+  border-color: rgba(255, 255, 255, 0.7) transparent transparent transparent;
 }
 
+/* Left button */
 .dpad-left {
-  left: 0;
-  transform: translateX(10px);
+  left: 5px;
+  border-radius: 5px 0 0 5px;
+}
+.dpad-left::before {
+  border-width: 12px 12px 12px 0;
+  border-color: transparent rgba(255, 255, 255, 0.7) transparent transparent;
 }
 
+/* Center button */
 .dpad-center {
-  width: 40px;
-  height: 40px;
-  background-color: rgba(255, 255, 255, 0.1);
+  width: 30px;
+  height: 30px;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+/* Active states for buttons */
+.dpad-button:active {
+  transform: scale(0.95);
+  background-color: rgba(0, 0, 0, 0.9);
+  box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.3);
 }
 
 /* Space button styles */
@@ -162,6 +211,31 @@
   }
 }
 
+/* Responsive tutorial popup for mobile */
+@media screen and (max-width: 900px) {
+  /* Tutorial popup adjustments */
+  .popup .popup-box {
+    width: min(90vw, 500px) !important;
+    max-height: 80vh !important;
+    padding: 15px !important;
+  }
+  
+  .popup h2 {
+    font-size: 18px !important;
+    margin-bottom: 10px !important;
+  }
+  
+  .popup img {
+    height: auto !important;
+    max-height: 200px !important;
+  }
+  
+  .popup .btn {
+    padding: 10px 15px !important;
+    font-size: 14px !important;
+  }
+}
+
 /* Only show mobile controls on mobile devices in landscape when explicitly enabled */
 @media screen and (max-width: 900px) and (orientation: landscape) {
   /* Controls are shown via JavaScript after tutorial */
@@ -170,6 +244,16 @@
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+  }
+  
+  /* Tutorial popup landscape adjustments */
+  .popup .popup-box {
+    width: min(80vw, 450px) !important;
+    max-height: 75vh !important;
+  }
+  
+  .popup img {
+    max-height: 150px !important;
   }
   
   /* Main menu adjustments */
@@ -255,7 +339,7 @@
     font-size: 0.9em !important;
   }
   
-  /* Adjust D-pad for smaller screens */
+  /* Adjust PlayStation D-pad for smaller screens */
   .dpad-container {
     width: 120px;
     height: 120px;
@@ -266,6 +350,31 @@
   .dpad-button {
     width: 40px;
     height: 40px;
+  }
+  
+  .dpad-button::before {
+    border-width: 10px 10px 10px 10px;
+  }
+  
+  .dpad-up::before {
+    border-width: 0 10px 10px 10px;
+  }
+  
+  .dpad-right::before {
+    border-width: 10px 0 10px 10px;
+  }
+  
+  .dpad-down::before {
+    border-width: 10px 10px 0 10px;
+  }
+  
+  .dpad-left::before {
+    border-width: 10px 10px 10px 0;
+  }
+  
+  .dpad-center {
+    width: 25px;
+    height: 25px;
   }
   
   /* Adjust Space button for smaller screens */
@@ -346,7 +455,7 @@
     margin-top: 5px !important;
   }
   
-  /* Controls adjustments */
+  /* Controls adjustments for PlayStation D-pad */
   .dpad-container {
     width: 100px;
     height: 100px;
@@ -358,6 +467,31 @@
     width: 35px;
     height: 35px;
     font-size: 14px;
+  }
+  
+  .dpad-button::before {
+    border-width: 8px 8px 8px 8px;
+  }
+  
+  .dpad-up::before {
+    border-width: 0 8px 8px 8px;
+  }
+  
+  .dpad-right::before {
+    border-width: 8px 0 8px 8px;
+  }
+  
+  .dpad-down::before {
+    border-width: 8px 8px 0 8px;
+  }
+  
+  .dpad-left::before {
+    border-width: 8px 8px 8px 0;
+  }
+  
+  .dpad-center {
+    width: 20px;
+    height: 20px;
   }
   
   .space-button {
@@ -372,12 +506,12 @@
   .char-list {
     width: 20% !important;
     padding: 3px !important;
-    gap: 4px !important;
+    gap: 3px !important;
   }
   
   .char-info {
     width: 30% !important;
-    padding: 5px !important;
+    padding: 3px !important;
   }
   
   .info-text h2 {
@@ -405,6 +539,36 @@
     width: 30px;
     height: 30px;
     font-size: 12px;
+  }
+  
+  .dpad::before {
+    width: 65%;
+    height: 65%;
+  }
+  
+  .dpad-button::before {
+    border-width: 7px 7px 7px 7px;
+  }
+  
+  .dpad-up::before {
+    border-width: 0 7px 7px 7px;
+  }
+  
+  .dpad-right::before {
+    border-width: 7px 0 7px 7px;
+  }
+  
+  .dpad-down::before {
+    border-width: 7px 7px 0 7px;
+  }
+  
+  .dpad-left::before {
+    border-width: 7px 7px 7px 0;
+  }
+  
+  .dpad-center {
+    width: 18px;
+    height: 18px;
   }
   
   .space-button-container {
